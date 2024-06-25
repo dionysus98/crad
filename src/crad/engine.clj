@@ -12,20 +12,15 @@
 (defrecord ValueRecord [data grad backward children op]
   ValueProtocol
   (backward [self]
-    (let [>bk #((:backward %) %)
-          bk- (fn backward- [s]
-                (let [res (reduce
-                           (fn build [acc v]
-                             (if (some #{v} acc)
-                               acc
-                               (concat
-                                (backward- (or (not-empty (>bk v)) v))
-                                acc)))
-                           []
-                           (:children s))]
-                  (vec (cons s res))))
-          out (>bk (assoc self :grad 1))]
-      (vec (remove nil? (bk- out)))))
+    (let [bk-  (fn backward-
+                 [s & {grad :grad}]
+                 (let [v (if (number? grad)
+                           (assoc s :grad grad)
+                           s)
+                       >bk  #((:backward %) %)]
+                   (-> (or (not-empty (>bk v)) v)
+                       (update :children (partial mapv backward-)))))]
+      (bk- self :grad 1)))
 
   (relu [self]
     (let [n  (:data self)
@@ -84,13 +79,12 @@
 
 (defmethod print-method ValueRecord [v ^java.io.Writer w]
   (.write w (pr-str (-> (dissoc v :backward)
-                        (update :children count)
                         (update-vals (fn [v]
                                        (if (number? v)
                                          (parse-double (format "%.3f" (double v)))
                                          v)))))))
 
-(defn value
+(defn <v>
   [n & {grad :grad
         cn :children
         op :op}]
@@ -100,17 +94,11 @@
         bk   (constantly nil)]
     (->ValueRecord n grad bk cn op)))
 
-
-
 (comment
-
-  (let [a (value 2)
-        b (value 4)
-        c (value 5)
-        d (v+ a (v+ b c))
+  (let [a   (<v> 2)
+        b   (<v> 4)
+        c   (<v> 5)
+        d   (v+ a (v+ b c))
         res (relu d)]
-    (backward res))
-
-
+    (backward (backward (backward res))))
   :rcf)
-
