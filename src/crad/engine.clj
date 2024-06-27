@@ -1,7 +1,7 @@
 (ns crad.engine)
 
 (defprotocol ValueProtocol
-  (backward [self] "implements the back propagation for the Value")
+  (backward [self] "implements back propagation")
   (v+ [self other] "implements addition")
   (v- [self other] "implements subtraction")
   (v* [self other] "implements multiplication")
@@ -98,7 +98,13 @@
   (let [a   (<v> 2)
         b   (<v> 4)
         c   (<v> 5)
-        d   (v+ a (v+ b c))
+        e   (<v> 1)
+        d   (->> c
+                 (v+ b)
+                 (v+ a)
+                 (v* e)
+                 (vdiv c)
+                 (v- a))
         res (relu d)]
     (backward (backward (backward res))))
   :rcf)
