@@ -26,10 +26,13 @@
         rnd (if (neg? from)
               (* rneg rnd)
               rnd)]
-    (cond-> rnd
-      (< rnd from) (+ from))))
+    (if (< rnd from)
+      (rrand from to :dtype dtype)
+      rnd)))
 
-(defn linspace [start stop num]
+(defn linspace
+  "(linspace- -10 15 5.0)"
+  [start stop num]
   (let [div   (dec num)
         delta (- stop start)
         step  (/ delta div)]
@@ -38,6 +41,7 @@
 ;; (linspace- -10 15 5.0)
 
 (defn make-moons
+  "(make-moons)"
   [& {nsa :nsamples
       :or {nsa 100}}]
   (let [nsaout (Math/floorDiv nsa 2)
